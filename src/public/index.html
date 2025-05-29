@@ -33,7 +33,7 @@
       // Attach all event listeners
       activityEvents.forEach(event => {
         window.addEventListener(event, ()=>{
-          window.top?.postMessage({ event: "user-activity-in-frame" }, "*")
+          window.parent?.postMessage({ event: "user-activity-in-frame" }, "*")
         });
       });
     </script>

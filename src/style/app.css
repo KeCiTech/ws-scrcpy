@@ -102,23 +102,23 @@ body.stream {
 
 .device-view {
     z-index: 1;
-    float: right;
-    display: flex;
-    flex-direction: row;
+    /* float: right; */
+    /* display: flex; */
+    /* flex-direction: row; */
     width: 100%;
-    max-width: 460px;
-    justify-content: start;
+    /* max-width: 460px; */
+    /* justify-content: start; */
 }
 
 .video-layer {
     position: absolute;
     z-index: 0;
-    border-radius: 1.5rem;
+    /* border-radius: 1.5rem; */
 }
 
 .touch-layer {
     position: absolute;
-    border-radius: 1.5rem;
+    /* border-radius: 1.5rem; */
     z-index: 1;
 }
 
@@ -144,13 +144,69 @@ body.stream {
 }
 
 .control-buttons-list {
-    /* float: right; */
-    width: 1.6rem;
+    position: fixed;
+    z-index: 1000;
+    cursor: move;
+    user-select: none;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     background-color: var(--control-buttons-bg-color);
-    padding-left: 8px;
-    padding-right: 8px;
-    /* margin-left: auto; */
-    padding-top: 1rem;
+    padding: 8px;
+    /* 默认宽屏布局 */
+    top: 10px;
+    left: 10px;
+    width: 1.6rem;
+}
+
+/* 窄屏布局（屏幕宽度小于高度时） */
+@media (max-aspect-ratio: 0.6) {
+    /* 控制按钮列表样式 */
+    .control-buttons-list {
+        position: fixed;
+        width: auto;
+        top: auto;
+        bottom: 0;
+        left: 50%;
+        transform: translate(-50%, 0);
+        
+        /* 横向布局 */
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 16px;
+        gap: 8px;
+        z-index: 1001;
+    }
+    
+    /* 控制按钮样式 */
+    .control-button {
+        display: block !important;
+        margin: 0;
+    }
+    
+    /* More box 样式 */
+    .more-box {
+        position: fixed !important;
+        left: 50% !important;
+        transform: translateX(-50%);
+        width: 90% !important;
+        max-width: 400px;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+    }
+    
+    /* 当控制栏在底部时，more box 显示在上方 */
+    .control-buttons-list:not(.top) ~ .more-box.show {
+        bottom: 70px !important;
+        top: auto !important;
+    }
+    
+    /* 当控制栏在顶部时，more box 显示在下方 */
+    .control-buttons-list.top ~ .more-box.show {
+        top: 70px !important;
+        bottom: auto !important;
+    }
 }
 
 .control-button {
@@ -159,19 +215,59 @@ body.stream {
     height: 1.5rem;
     border: none;
     opacity: 0.75;
-    background-color: var(--control-buttons-bg-color);
+    background-color: transparent;
+    display: none; /* 默认隐藏 */
+    transition: opacity 0.3s ease, fill 0.3s ease;
+    cursor: pointer;
+}
+
+:fullscreen .control-button[title="Fullscreen"] {
+    display: block; /* 全屏模式下显示 */
+}
+
+:fullscreen .control-button[title="Fullscreen"] > svg {
+    fill: var(--svg-checkbox-bg-color) !important; /* 全屏模式下改变颜色 */
 }
 
 .control-button:hover {
     opacity: 1;
 }
 
-.control-wrapper > input[type=checkbox] {
-    display: none;
+/* 全屏模式下的控制按钮样式 */
+:fullscreen .control-buttons-list {
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
-.control-wrapper > label {
+:fullscreen .control-button > svg {
+    fill: #ffffff;
+}
+
+:fullscreen .control-button {
+    opacity: 0.85;
+}
+
+:fullscreen .control-button:hover {
+    opacity: 1;
+}
+
+/* 显示必要的按钮 */
+.control-button[title="Back"],
+.control-button[title="Home"],
+.control-button[title="Overview"],
+.control-button[title="More"],
+.control-button[title="Power"],
+.control-buttons-list.show-all .control-button {
+    display: block;
+}
+
+.control-buttons-list.show-all > label
+/* ,.control-wrapper > label */
+{
     display: inline-block;
+}
+
+.control-wrapper > input[type=checkbox] {
+    display: none;
 }
 
 .control-button > svg {

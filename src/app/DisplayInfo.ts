@@ -17,13 +17,13 @@ export class DisplayInfo {
         public readonly layerStack: number,
         public readonly flags: number,
     ) {
-        const deviceViewElem = document.getElementsByClassName('device-view')[0] as HTMLElement;
-        if( rotation && deviceViewElem ){
-            deviceViewElem.style.maxWidth = "none";            
-        }
-        else if( deviceViewElem ){
-            deviceViewElem.style.maxWidth = "460px";
-        }
+        // const deviceViewElem = document.getElementsByClassName('device-view')[0] as HTMLElement;
+        // if( rotation && deviceViewElem ){
+        //     deviceViewElem.style.maxWidth = "none";            
+        // }
+        // else if( deviceViewElem ){
+        //     deviceViewElem.style.maxWidth = "460px";
+        // }
     }
 
     public toBuffer(): Buffer {

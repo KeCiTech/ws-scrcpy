@@ -50,6 +50,8 @@ export class ConfigureScrcpy extends BaseClient<ParamsStreamScrcpy, ConfigureScr
     private dialogContainer?: HTMLElement;
     private statusText = '';
     private connectionCount = 0;
+    private autoOpenTimer?: number;
+    private countdownSeconds = 3;
 
     constructor(private readonly tracker: DeviceTracker, descriptor: GoogDeviceDescriptor, params: ParamsStreamScrcpy) {
         super(params);
@@ -547,19 +549,30 @@ export class ConfigureScrcpy extends BaseClient<ParamsStreamScrcpy, ConfigureScr
         statusElement.classList.add('subtitle');
         this.connectionStatusElement = statusElement;
         dialogFooter.appendChild(statusElement);
-        this.statusText = `Connecting...`;
-        this.updateStatus();
+        this.statusText = `Connecting...`; this.updateStatus();
 
-        // const cancelButton = (this.cancelButton = document.createElement('button'));
-        // cancelButton.innerText = 'Cancel';
-        // cancelButton.addEventListener('click', this.cancel);
+        const cancelButton = document.createElement('button');
+        cancelButton.innerText = 'Cancel';
+        cancelButton.classList.add('button');
+        cancelButton.addEventListener('click', () => {
+            this.clearAutoOpenTimer();
+        });
+
         const okButton = (this.okButton = document.createElement('button'));
         okButton.innerText = 'Open';
         okButton.disabled = true;
         okButton.addEventListener('click', this.openStream);
+
+        dialogFooter.appendChild(cancelButton);
         dialogFooter.appendChild(okButton);
-        // dialogFooter.appendChild(cancelButton);
         dialogBody.appendChild(dialogFooter);
+
+        // Start auto timing
+        setTimeout(() => {
+            if (okButton && !okButton.disabled) {
+                this.startAutoOpenTimer();
+            }
+        }, 500);
         dialogContainer.appendChild(dialogHeader);
         dialogContainer.appendChild(dialogBody);
         dialogContainer.appendChild(dialogFooter);
@@ -624,12 +637,18 @@ export class ConfigureScrcpy extends BaseClient<ParamsStreamScrcpy, ConfigureScr
         this.detachEventsListeners(this.streamReceiver);
         this.emit('closed', { dialog: this, result: true });
         this.removeUI();
+
+        // Hide logout button
+        const logoutButton = document.getElementById('logout-button');
+        if (logoutButton) {
+            logoutButton.style.display = 'none';
+        }
+
         const player = StreamClientScrcpy.createPlayer(this.playerName, this.udid, this.displayInfo);
         if (!player) {
             return;
         }
         this.setPreviouslyUsedPlayer(this.playerName);
-        // return;
         player.setVideoSettings(videoSettings, fitToScreen, false);
         const params: ParamsStreamScrcpy = {
             ...this.params,
@@ -638,5 +657,59 @@ export class ConfigureScrcpy extends BaseClient<ParamsStreamScrcpy, ConfigureScr
         };
         StreamClientScrcpy.start(params, this.streamReceiver, player, fitToScreen, videoSettings);
         this.streamReceiver.triggerInitialInfoEvents();
+    };
+
+    private startAutoOpenTimer = (): void => {
+        if (this.autoOpenTimer) {
+            return;
+        }
+
+        // Auto set optimal parameters
+        if (this.fitToScreenCheckbox) {
+            this.fitToScreenCheckbox.checked = true;
+            this.onFitToScreenChanged(true);
+        }
+
+        // Set maximum bitrate
+        const bitrateInput = this.getBasicInput('bitrate');
+        if (bitrateInput) {
+            bitrateInput.value = '8388608'; // Maximum bitrate
+            bitrateInput.dispatchEvent(new Event('input'));
+        }
+
+        // Set maximum FPS
+        const fpsInput = this.getBasicInput('maxFps');
+        if (fpsInput) {
+            fpsInput.value = '60'; // Maximum FPS
+            fpsInput.dispatchEvent(new Event('input'));
+        }
+
+        this.countdownSeconds = 10;
+        this.updateCountdown();
+        this.autoOpenTimer = window.setInterval(() => {
+            this.countdownSeconds--;
+            if (this.countdownSeconds <= 0) {
+                this.clearAutoOpenTimer();
+                this.openStream();
+            } else {
+                this.updateCountdown();
+            }
+        }, 1000);
+    };
+
+    private clearAutoOpenTimer = (): void => {
+        if (this.autoOpenTimer) {
+            window.clearInterval(this.autoOpenTimer);
+            this.autoOpenTimer = undefined;
+        }
+        if (this.okButton) {
+            this.okButton.innerText = 'Open';
+        }
+    };
+
+    private updateCountdown = (): void => {
+        if (this.okButton) {
+            this.okButton.innerText = `Open (${this.countdownSeconds}s)`;
+        }
     };
 }

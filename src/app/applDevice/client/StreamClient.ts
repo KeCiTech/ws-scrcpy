@@ -87,7 +87,9 @@ export abstract class StreamClient<T extends ParamsStream> extends BaseClient<T,
             return;
         }
         const body = document.body;
-        const width = (body.clientWidth - controlButtons.clientWidth) & ~15;
+        // const width = (body.clientWidth - controlButtons.clientWidth) & ~15;
+        // const height = body.clientHeight & ~15;
+        const width = body.clientWidth & ~15;
         const height = body.clientHeight & ~15;
         return new Size(width, height);
     }

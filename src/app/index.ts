@@ -12,7 +12,7 @@ window.onload = async function (): Promise<void> {
         const parsedQuery = new URLSearchParams(hash);
 
         // Add `hasHash=true` to the query parameters
-        parsedQuery.set('hasHash', 'true');
+        // parsedQuery.set('hasHash', 'true');
 
         // Redirect to a query-based URL
         window.location.href = `/?${parsedQuery.toString()}`;

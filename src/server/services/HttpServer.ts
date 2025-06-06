@@ -11,7 +11,6 @@ import { EnvName } from '../EnvName';
 import basicAuth from 'express-basic-auth'; // Add this for basic authentication
 import * as crypto from 'crypto';
 
-
 const DEFAULT_STATIC_DIR = path.join(__dirname, './public');
 
 const PATHNAME = process.env[EnvName.WS_SCRCPY_PATHNAME] || __PATHNAME__;
@@ -32,9 +31,26 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
     private servers: ServerAndPort[] = [];
     private mainApp?: Express;
     private started = false;
+    private usedSignatures: Map<string, number> = new Map(); // Store used signatures with their timestamps
 
     protected constructor() {
         super();
+        // Clean expired signatures every minute
+        setInterval(() => this.cleanupOldSignatures(), 60000);
+    }
+
+    private cleanupOldSignatures(): void {
+        const tenSecondsAgo = Date.now() - 60000;
+        for (const [signature, timestamp] of this.usedSignatures.entries()) {
+            if (timestamp < tenSecondsAgo) {
+                this.usedSignatures.delete(signature);
+            }
+        }
+    }
+
+    private isValidTimestamp(timestamp: number): boolean {
+        const currentTime = Date.now();
+        return !isNaN(timestamp) && timestamp <= currentTime && currentTime - timestamp <= 60000;
     }
 
     public static getInstance(): HttpServer {
@@ -78,87 +94,77 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
     }
 
     public verifySignature(req: Request): boolean {
-        const SECRET_KEY = process.env.SIGNATURE_SECRET_KEY as string;
-        console.log('SECRET_KEY:', SECRET_KEY);
+        const SECRET_KEY = process.env.SIGNATURE_SECRET_KEY;
         if (!SECRET_KEY) {
-            throw new Error('Environment variables SECRET_KEY must be set');
+            throw new Error('Environment variable SIGNATURE_SECRET_KEY must be set');
         }
-    
-        // Construct the full URL including protocol, host, and path
-        const host = req.get('host'); // Get the host from the request headers
-        let protocol: string;
-        if (host?.startsWith('localhost')) {
-            protocol = 'http';
-        }
-        else{
-            protocol = 'https';
-        }
-        const path = req.originalUrl.split('&signature=')[0]; // Get the path and query without the signature
-    
-        const fullUrl = `${protocol}://${host}${path}`;
 
-        // Extract the received signature
+        const timestamp = req.query.timestamp;
         const receivedSignature = req.query.signature as string;
-    
-    
-        // Create a HMAC-SHA256 hash of the URL using the secret key
-        const hmac = crypto.createHmac('sha256', Buffer.from(SECRET_KEY, 'utf8')); // Use 'utf8' if SECRET_KEY is plain text
-        hmac.update(fullUrl);
-        const calculatedSignature = hmac.digest('base64');
-    
-    
-        // Convert base64 to base64url
-        const base64urlSignature = calculatedSignature
-            .replace(/\+/g, '-') // Replace '+' with '-'
-            .replace(/\//g, '_') // Replace '/' with '_'
-            .replace(/=+$/, ''); // Remove padding '=' characters
-    
-    
-        // Compare the calculated signature with the received signature
-        return receivedSignature === base64urlSignature;
+
+        if (!timestamp || !receivedSignature || typeof timestamp !== 'string') {
+            return false;
+        }
+
+        const timestampNum = parseInt(timestamp, 10);
+        if (!this.isValidTimestamp(timestampNum)) {
+            return false;
+        }
+
+        // Calculate signature: use timestamp as salt
+        const hmac = crypto.createHmac('sha256', SECRET_KEY);
+        const dataToHash = `${timestamp}:${SECRET_KEY}`; // Add timestamp to increase randomness
+        hmac.update(dataToHash);
+        const calculatedSignature = hmac.digest('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+        // Check if signature has been used
+        if (this.usedSignatures.has(receivedSignature)) {
+            return false;
+        }
+
+        // Verify signature
+        if (receivedSignature === calculatedSignature) {
+            this.usedSignatures.set(receivedSignature, timestampNum);
+            return true;
+        }
+
+        return false;
     }
-    
-    
 
     public async start(): Promise<void> {
-        this.mainApp = express();
+        this.mainApp = express(); // Check environment variables
+        const adminUser = process.env.ADMIN_USE ?? '';
+        const adminPassword = process.env.ADMIN_PASSWORD ?? '';
 
-        // Ensure environment variables are defined
-        const adminUser = process.env.ADMIN_USER;
-        const adminPassword = process.env.ADMIN_PASSWORD;
-
-        if (!adminUser || !adminPassword) {
-            throw new Error('Environment variables ADMIN_USER and ADMIN_PASSWORD must be set');
-        }
-
-        // Add basic authentication middleware for the base path
+        // Create middleware based on environment variables presence
         const authMiddleware = basicAuth({
             users: { 
                 [adminUser]: adminPassword 
             },
             challenge: true,
             realm: 'Restricted Access',
-        });
-
+        }); 
         // Protect the base path
         this.mainApp.use((req: Request, res: Response, next: NextFunction) => {
-            if (req.path === '/' && req.query.hasHash==='true' && req.query.signature) {
-                // Verify the signature for the base URL
+            if (req.path === '/' && req.query.signature && req.query.timestamp) {
+                // Using signature verification
                 if (this.verifySignature(req)) {
                     next();
                 } else {
-                    res.status(403).send('Invalid signature');
+                    res.status(403).send('Invalid signature or expired timestamp');
                 }
             } else if (req.path === '/') {
-                // Apply authentication for all other cases (including the base URL)
+                if(!adminUser || !adminPassword){
+                    res.status(404).end();
+                }
+                // Using basic authentication
                 authMiddleware(req, res, next);
             } else {
                 // Allow access to other paths
                 next();
             }
         });
-        
-        
+
         // this.mainApp.use((req: Request, _res: Response, next: NextFunction) => {
         //     console.log('Protocol:', req.protocol); // Log the protocol (http or https)
         //     next();

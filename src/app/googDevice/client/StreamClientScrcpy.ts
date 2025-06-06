@@ -190,6 +190,7 @@ export class StreamClientScrcpy
         if (!this.player) {
             return;
         }
+        
         let currentSettings = this.player.getVideoSettings();
         const displayId = currentSettings.displayId;
         const info = infoArray.find((value) => {
@@ -206,6 +207,8 @@ export class StreamClientScrcpy
         if (typeof this.fitToScreen !== 'boolean') {
             this.fitToScreen = this.player.getFitToScreenStatus();
         }
+        // Default
+        this.fitToScreen = true;
         if (this.fitToScreen) {
             const newBounds = this.getMaxSize();
             if (newBounds) {
@@ -339,11 +342,11 @@ export class StreamClientScrcpy
         this.filePushHandler.addEventListener(logger);
 
         const streamReceiver = this.streamReceiver;
-        streamReceiver.on('deviceMessage', this.OnDeviceMessage);
-        streamReceiver.on('rotated', ()=>{ this.player?.reOrientScreen(true, this.player) });
+        streamReceiver.on('deviceMessage', this.OnDeviceMessage);    
         streamReceiver.on('video', this.onVideo);
         streamReceiver.on('clientsStats', this.onClientsStats);
         streamReceiver.on('displayInfo', this.onDisplayInfo);
+        streamReceiver.on('rotated', ()=>{ this.player?.reOrientScreen() });
         streamReceiver.on('disconnected', this.onDisconnected);
         console.log(TAG, player.getName(), udid);
     }
@@ -386,7 +389,9 @@ export class StreamClientScrcpy
             return;
         }
         const body = document.body;
-        const width = (body.clientWidth - this.controlButtons.clientWidth) & ~15;
+        // const width = (body.clientWidth - this.controlButtons.clientWidth) & ~15;
+        // const height = body.clientHeight & ~15;
+        const width = body.clientWidth & ~15;
         const height = body.clientHeight & ~15;
         return new Size(width, height);
     }

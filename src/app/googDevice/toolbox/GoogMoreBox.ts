@@ -7,6 +7,7 @@ import Size from '../../Size';
 import DeviceMessage from '../DeviceMessage';
 import VideoSettings from '../../VideoSettings';
 import { StreamClientScrcpy } from '../client/StreamClientScrcpy';
+import { QualityOptimizer } from '../../QualityOptimizer';
 
 const TAG = '[GoogMoreBox]';
 
@@ -20,12 +21,23 @@ export class GoogMoreBox {
     private readonly iFrameIntervalInput?: HTMLInputElement;
     private readonly maxWidthInput?: HTMLInputElement;
     private readonly maxHeightInput?: HTMLInputElement;
+    private readonly qualityOptimizer: QualityOptimizer;
+
+    private lastClipboardText: string = '';
+    private isUpdatingClipboard: boolean = false;
+    private clipboardSyncEnabled: boolean = true;
+
+    // Bandwidth auto-adjustment properties
+    private isAutoBitrateEnabled: boolean = false;
 
     constructor(udid: string, private player: BasePlayer, private client: StreamClientScrcpy) {
+        this.qualityOptimizer = new QualityOptimizer(player, client);
         const playerName = player.getName();
         const videoSettings = player.getVideoSettings();
         const { displayId } = videoSettings;
         const preferredSettings = player.getPreferredVideoSetting();
+        // Start clipboard synchronization
+        this.startClipboardSync();        // Construct UI first
         const moreBox = document.createElement('div');
         moreBox.className = 'more-box';
         const nameBox = document.createElement('p');
@@ -213,7 +225,50 @@ export class GoogMoreBox {
         GoogMoreBox.wrap('p', [qualityCheck, qualityLabel], moreBox, ['flex-center']);
         qualityCheck.onchange = () => {
             player.setShowQualityStats(qualityCheck.checked);
+        }; // Add auto bitrate adjustment switch
+        const autoBitrateId = `auto_bitrate_${udid}_${playerName}_${displayId}`;
+        const autoBitrateLabel = document.createElement('label');
+        const autoBitrateCheck = document.createElement('input');
+        autoBitrateCheck.type = 'checkbox';
+        autoBitrateCheck.id = autoBitrateId;
+        autoBitrateLabel.htmlFor = autoBitrateId;
+        autoBitrateLabel.innerText = '自动调节清晰度';
+        GoogMoreBox.wrap('p', [autoBitrateCheck, autoBitrateLabel], moreBox, ['flex-center']);        // Enable auto bitrate adjustment by default
+        const initAutoBitrate = () => {
+            autoBitrateCheck.checked = true;
+            this.isAutoBitrateEnabled = true;
         };
+
+        // Initialize immediately
+        initAutoBitrate();
+
+        autoBitrateCheck.onchange = () => {
+            this.isAutoBitrateEnabled = autoBitrateCheck.checked;
+            if (this.isAutoBitrateEnabled) {
+                this.startAutoQualityAdjustment();
+            }
+            // Save settings
+            try {
+                localStorage.setItem(`autoBitrate_${udid}`, this.isAutoBitrateEnabled.toString());
+            } catch (e) {
+                console.warn('[GoogMoreBox] Failed to save auto bitrate setting:', e);
+            }
+        };
+
+        // Restore settings from local storage
+        try {
+            const savedAutoBitrate = localStorage.getItem(`autoBitrate_${udid}`);
+            if (savedAutoBitrate !== null) {
+                const enabled = savedAutoBitrate === 'true';
+                autoBitrateCheck.checked = enabled;
+                this.isAutoBitrateEnabled = enabled;
+                if (enabled) {
+                    this.startAutoQualityAdjustment();
+                }
+            }
+        } catch (e) {
+            console.warn('[GoogMoreBox] Failed to read auto bitrate setting:', e);
+        }
 
         const stop = (ev?: string | Event) => {
             if (ev && ev instanceof Event && ev.type === 'error') {
@@ -238,6 +293,8 @@ export class GoogMoreBox {
         player.on('video-view-resize', this.onViewVideoResize);
         player.on('video-settings', this.onVideoSettings);
         this.holder = moreBox;
+
+        this.startClipboardSync();
     }
 
     private onViewVideoResize = (size: Size): void => {
@@ -280,14 +337,58 @@ export class GoogMoreBox {
         const preferredSettings = this.player.getPreferredVideoSetting();
         this.onVideoSettings(preferredSettings);
     };
-
     public OnDeviceMessage(ev: DeviceMessage): void {
         if (ev.type !== DeviceMessage.TYPE_CLIPBOARD) {
             return;
         }
-        this.input.value = ev.getText();
+        const text = ev.getText();
+        this.input.value = text;
         this.input.select();
-        document.execCommand('copy');
+        // Update host clipboard
+        this.setHostClipboard(text);
+        this.setHostClipboard(ev.getText());
+    }
+
+    private startClipboardSync() {
+        if (navigator.clipboard && window.ClipboardItem) {
+            setInterval(async () => {
+                try {
+                    if (this.isUpdatingClipboard || !this.clipboardSyncEnabled) return;
+                    const text = await navigator.clipboard.readText();
+                    if (text && text !== this.lastClipboardText) {
+                        this.isUpdatingClipboard = true;
+                        this.lastClipboardText = text;
+                        // Send to controlled device
+                        this.client.sendMessage(CommandControlMessage.createSetClipboardCommand(text));
+                        this.isUpdatingClipboard = false;
+                    }
+                } catch (e) {
+                    // console.warn('[GoogMoreBox] Failed to read clipboard:', e);
+                    this.isUpdatingClipboard = false;
+                }
+            }, 1000);
+        }
+    }
+
+    private setHostClipboard(text: string) {
+        if (!this.clipboardSyncEnabled) return;
+        this.isUpdatingClipboard = true;
+        this.lastClipboardText = text;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).catch((e) => {
+                console.warn('[GoogMoreBox] 设置剪贴板失败:', e);
+            });
+        }
+        this.isUpdatingClipboard = false;
+    }
+
+    private startAutoQualityAdjustment(): void {
+        // Use QualityOptimizer to handle quality adjustments
+        if (this.isAutoBitrateEnabled) {
+            this.qualityOptimizer.start();
+        } else {
+            this.qualityOptimizer.stop();
+        }
     }
 
     private static wrap(

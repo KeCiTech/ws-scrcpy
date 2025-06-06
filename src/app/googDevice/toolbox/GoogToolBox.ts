@@ -39,6 +39,11 @@ const BUTTONS = [
         code: KeyEvent.KEYCODE_APP_SWITCH,
         icon: SvgImage.Icon.OVERVIEW,
     },
+    {
+        title: 'Fullscreen',
+        code: null,
+        icon: SvgImage.Icon.FULLSCREEN,
+    },
 ];
 
 export class GoogToolBox extends ToolBox {
@@ -65,13 +70,26 @@ export class GoogToolBox extends ToolBox {
             const action = type === 'mousedown' ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP;
             const event = new KeyCodeControlMessage(action, code, 0, 0);
             client.sendMessage(event);
-        };
-        const elements: ToolBoxElement<any>[] = list.map((item) => {
+        }; const elements: ToolBoxElement<any>[] = list.map((item) => {
             const button = new ToolBoxButton(item.title, item.icon, {
                 code: item.code,
             });
-            button.addEventListener('mousedown', handler);
-            button.addEventListener('mouseup', handler);
+            if (item.title === 'Fullscreen') {
+                button.addEventListener('click', () => {
+                    const container = document.querySelector('.device-view') as HTMLElement;
+                    if (!container) return;
+                    if (!document.fullscreenElement) {
+                        container.requestFullscreen().catch(err => {
+                            console.error('Error attempting to enable full-screen mode:', err);
+                        });
+                    } else {
+                        document.exitFullscreen();
+                    }
+                });
+            } else {
+                button.addEventListener('mousedown', handler);
+                button.addEventListener('mouseup', handler);
+            }
             return button;
         });
         if (player.supportsScreenshot) {
@@ -93,6 +111,14 @@ export class GoogToolBox extends ToolBox {
         });
         elements.push(keyboard);
 
+        // Add fullscreen button after Capture keyboard
+        elements.forEach((el, index) => {
+            if (el instanceof ToolBoxButton && el.title === 'Fullscreen') {
+                elements.splice(index, 1); // Remove from original position
+                elements.splice(elements.indexOf(keyboard) + 1, 0, el); // Insert after keyboard button
+            }
+        });
+
         if (moreBox) {
             const displayId = player.getVideoSettings().displayId;
             const id = `show_more_${udid}_${playerName}_${displayId}`;
@@ -101,7 +127,7 @@ export class GoogToolBox extends ToolBox {
                 const element = el.getElement();
                 moreBox.style.display = element.checked ? 'block' : 'none';
             });
-            // elements.unshift(more);
+            elements.unshift(more);
         }
         return new GoogToolBox(elements);
     }

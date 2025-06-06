@@ -5,10 +5,29 @@
 
 .more-box {
     display: none;
-    position: absolute;
+    position: fixed; /* 改为 fixed 定位 */
     background-color: var(--controls-bg-color);
-    z-index: 2;
-    padding: 0 .714rem .714rem .714rem;
+    z-index: 98;
+    padding: 0.714rem;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    min-width: 200px;
+    max-width: 300px;
+
+}
+
+.more-box.show {
+    display: block;
+}
+
+/* 当右侧空间不足时的样式 */
+.more-box.position-left {
+    margin-right: 5px;
+}
+
+/* 默认右侧显示的样式 */
+.more-box.position-right {
+    margin-left: 5px;
 }
 
 .text-with-shadow, .more-box label {

@@ -152,15 +152,12 @@ body.stream {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     background-color: var(--control-buttons-bg-color);
     padding: 8px;
-    /* 默认宽屏布局 */
     top: 10px;
     left: 10px;
     width: 1.6rem;
 }
 
-/* 窄屏布局（屏幕宽度小于高度时） */
 @media (max-aspect-ratio: 0.6) {
-    /* 控制按钮列表样式 */
     .control-buttons-list {
         position: fixed;
         width: auto;
@@ -168,8 +165,7 @@ body.stream {
         bottom: 0;
         left: 50%;
         transform: translate(-50%, 0);
-        
-        /* 横向布局 */
+
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -179,13 +175,11 @@ body.stream {
         z-index: 1001;
     }
     
-    /* 控制按钮样式 */
     .control-button {
         display: block !important;
         margin: 0;
     }
     
-    /* More box 样式 */
     .more-box {
         position: fixed !important;
         left: 50% !important;
@@ -196,13 +190,11 @@ body.stream {
         overflow-y: auto;
     }
     
-    /* 当控制栏在底部时，more box 显示在上方 */
     .control-buttons-list:not(.top) ~ .more-box.show {
         bottom: 70px !important;
         top: auto !important;
     }
     
-    /* 当控制栏在顶部时，more box 显示在下方 */
     .control-buttons-list.top ~ .more-box.show {
         top: 70px !important;
         bottom: auto !important;
@@ -216,24 +208,23 @@ body.stream {
     border: none;
     opacity: 0.75;
     background-color: transparent;
-    display: none; /* 默认隐藏 */
+    display: none; 
     transition: opacity 0.3s ease, fill 0.3s ease;
     cursor: pointer;
 }
 
 :fullscreen .control-button[title="Fullscreen"] {
-    display: block; /* 全屏模式下显示 */
+    display: block; 
 }
 
 :fullscreen .control-button[title="Fullscreen"] > svg {
-    fill: var(--svg-checkbox-bg-color) !important; /* 全屏模式下改变颜色 */
+    fill: var(--svg-checkbox-bg-color) !important;
 }
 
 .control-button:hover {
     opacity: 1;
 }
 
-/* 全屏模式下的控制按钮样式 */
 :fullscreen .control-buttons-list {
     background-color: rgba(0, 0, 0, 0.5);
 }
@@ -250,7 +241,6 @@ body.stream {
     opacity: 1;
 }
 
-/* 显示必要的按钮 */
 .control-button[title="Back"],
 .control-button[title="Home"],
 .control-button[title="Overview"],

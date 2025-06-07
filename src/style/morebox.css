@@ -5,7 +5,7 @@
 
 .more-box {
     display: none;
-    position: fixed; /* 改为 fixed 定位 */
+    position: fixed;
     background-color: var(--controls-bg-color);
     z-index: 98;
     padding: 0.714rem;
@@ -20,12 +20,10 @@
     display: block;
 }
 
-/* 当右侧空间不足时的样式 */
 .more-box.position-left {
     margin-right: 5px;
 }
 
-/* 默认右侧显示的样式 */
 .more-box.position-right {
     margin-left: 5px;
 }

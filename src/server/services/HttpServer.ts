@@ -31,18 +31,18 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
     private servers: ServerAndPort[] = [];
     private mainApp?: Express;
     private started = false;
-    private usedSignatures: Map<string, number> = new Map(); // Store used signatures with their timestamps
+    private usedSignatures: Map<string, { timestamp: number; ip: string; userAgent: string }> = new Map();
 
     protected constructor() {
         super();
         // Clean expired signatures every minute
-        setInterval(() => this.cleanupOldSignatures(), 60000);
+        setInterval(() => this.cleanupOldSignatures(), 600000);
     }
 
     private cleanupOldSignatures(): void {
         const tenSecondsAgo = Date.now() - 60000;
-        for (const [signature, timestamp] of this.usedSignatures.entries()) {
-            if (timestamp < tenSecondsAgo) {
+        for (const [signature, data] of this.usedSignatures.entries()) {
+            if (data.timestamp < tenSecondsAgo) {
                 this.usedSignatures.delete(signature);
             }
         }
@@ -101,6 +101,8 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
 
         const timestamp = req.query.timestamp;
         const receivedSignature = req.query.signature as string;
+        const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+        const userAgent = req.headers['user-agent'] || 'unknown';
 
         if (!timestamp || !receivedSignature || typeof timestamp !== 'string') {
             return false;
@@ -111,20 +113,28 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
             return false;
         }
 
+        // Check if signature has been used
+        if (this.usedSignatures.has(receivedSignature)) {
+            const data = this.usedSignatures.get(receivedSignature)!;
+            if (data.ip === clientIp && data.userAgent === userAgent && data.timestamp === timestampNum) {
+                return true;
+            }
+            return false;
+        }
+
         // Calculate signature: use timestamp as salt
         const hmac = crypto.createHmac('sha256', SECRET_KEY);
         const dataToHash = `${timestamp}:${SECRET_KEY}`; // Add timestamp to increase randomness
         hmac.update(dataToHash);
         const calculatedSignature = hmac.digest('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-        // Check if signature has been used
-        if (this.usedSignatures.has(receivedSignature)) {
-            return false;
-        }
-
         // Verify signature
         if (receivedSignature === calculatedSignature) {
-            this.usedSignatures.set(receivedSignature, timestampNum);
+            this.usedSignatures.set(receivedSignature, { 
+                timestamp: timestampNum, 
+                ip: clientIp,
+                userAgent: userAgent
+            });
             return true;
         }
 

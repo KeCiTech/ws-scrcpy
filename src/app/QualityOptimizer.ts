@@ -33,6 +33,7 @@ export class QualityOptimizer {
     }
 
     public start(): void {
+        console.log('[QualityOptimizer] Starting quality optimizer...');
         if (this.timerId) {
             return;
         }

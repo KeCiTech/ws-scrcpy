@@ -46,7 +46,7 @@ export interface PlayerClass {
         fitToScreen: boolean,
         displayInfo?: DisplayInfo,
     ): void;
-    new (udid: string, displayInfo?: DisplayInfo): BasePlayer;
+    new(udid: string, displayInfo?: DisplayInfo): BasePlayer;
 }
 
 export abstract class BasePlayer extends TypedEmitter<PlayerEvents> {
@@ -428,6 +428,11 @@ export abstract class BasePlayer extends TypedEmitter<PlayerEvents> {
             return;
         }
         const key = this.getFullStorageKey(storageKeyPrefix, udid, displayInfo);
+        // clean up old settings
+        const keysToRemove = Object.keys(window.localStorage).filter((k) => k.startsWith(`${storageKeyPrefix}:`));
+        for (const k of keysToRemove) {
+            window.localStorage.removeItem(k);
+        }
         window.localStorage.setItem(key, JSON.stringify(videoSettings));
         const fitKey = `${key}:fit`;
         window.localStorage.setItem(fitKey, JSON.stringify(fitToScreen));

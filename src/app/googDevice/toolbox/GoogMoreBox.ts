@@ -232,43 +232,33 @@ export class GoogMoreBox {
         autoBitrateCheck.type = 'checkbox';
         autoBitrateCheck.id = autoBitrateId;
         autoBitrateLabel.htmlFor = autoBitrateId;
-        autoBitrateLabel.innerText = '自动调节清晰度';
-        GoogMoreBox.wrap('p', [autoBitrateCheck, autoBitrateLabel], moreBox, ['flex-center']);        // Enable auto bitrate adjustment by default
-        const initAutoBitrate = () => {
-            autoBitrateCheck.checked = true;
-            this.isAutoBitrateEnabled = true;
-        };
-
-        // Initialize immediately
-        initAutoBitrate();
-
-        autoBitrateCheck.onchange = () => {
-            this.isAutoBitrateEnabled = autoBitrateCheck.checked;
+        autoBitrateLabel.innerText = 'Auto bitrate';
+        GoogMoreBox.wrap('p', [autoBitrateCheck, autoBitrateLabel], moreBox, ['flex-center']);
+        try {
+            const savedAutoBitrate = localStorage.getItem(`autoBitrate_${udid}`);
+            this.isAutoBitrateEnabled = savedAutoBitrate === 'true' || savedAutoBitrate === null;
+            autoBitrateCheck.checked = this.isAutoBitrateEnabled;
+            
             if (this.isAutoBitrateEnabled) {
                 this.startAutoQualityAdjustment();
             }
-            // Save settings
+        } catch (e) {
+            console.warn(TAG, 'Failed to read auto bitrate setting:', e);
+            this.isAutoBitrateEnabled = true;
+            autoBitrateCheck.checked = true;
+            this.startAutoQualityAdjustment();
+        }
+
+        autoBitrateCheck.onchange = () => {
+            this.isAutoBitrateEnabled = autoBitrateCheck.checked;
+            this.startAutoQualityAdjustment();
+            
             try {
                 localStorage.setItem(`autoBitrate_${udid}`, this.isAutoBitrateEnabled.toString());
             } catch (e) {
-                console.warn('[GoogMoreBox] Failed to save auto bitrate setting:', e);
+                console.warn(TAG, 'Failed to save auto bitrate setting:', e);
             }
         };
-
-        // Restore settings from local storage
-        try {
-            const savedAutoBitrate = localStorage.getItem(`autoBitrate_${udid}`);
-            if (savedAutoBitrate !== null) {
-                const enabled = savedAutoBitrate === 'true';
-                autoBitrateCheck.checked = enabled;
-                this.isAutoBitrateEnabled = enabled;
-                if (enabled) {
-                    this.startAutoQualityAdjustment();
-                }
-            }
-        } catch (e) {
-            console.warn('[GoogMoreBox] Failed to read auto bitrate setting:', e);
-        }
 
         const stop = (ev?: string | Event) => {
             if (ev && ev instanceof Event && ev.type === 'error') {
@@ -363,7 +353,7 @@ export class GoogMoreBox {
                         this.isUpdatingClipboard = false;
                     }
                 } catch (e) {
-                    // console.warn('[GoogMoreBox] Failed to read clipboard:', e);
+                    // console.warn(TAG, 'Failed to read clipboard:', e);
                     this.isUpdatingClipboard = false;
                 }
             }, 1000);
@@ -376,7 +366,7 @@ export class GoogMoreBox {
         this.lastClipboardText = text;
         if (navigator.clipboard) {
             navigator.clipboard.writeText(text).catch((e) => {
-                console.warn('[GoogMoreBox] 设置剪贴板失败:', e);
+                console.warn(TAG, 'Failed to write clipboard:', e);
             });
         }
         this.isUpdatingClipboard = false;

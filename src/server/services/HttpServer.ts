@@ -35,12 +35,12 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
 
     protected constructor() {
         super();
-        // Clean expired signatures every minute
-        setInterval(() => this.cleanupOldSignatures(), 600000);
+        // Clean expired signatures every hour
+        setInterval(() => this.cleanupOldSignatures(), 3600000);
     }
 
     private cleanupOldSignatures(): void {
-        const tenSecondsAgo = Date.now() - 60000;
+        const tenSecondsAgo = Date.now() - 3600000;
         for (const [signature, data] of this.usedSignatures.entries()) {
             if (data.timestamp < tenSecondsAgo) {
                 this.usedSignatures.delete(signature);
@@ -109,9 +109,6 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
         }
 
         const timestampNum = parseInt(timestamp, 10);
-        if (!this.isValidTimestamp(timestampNum)) {
-            return false;
-        }
 
         // Check if signature has been used
         if (this.usedSignatures.has(receivedSignature)) {
@@ -119,6 +116,10 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
             if (data.ip === clientIp && data.userAgent === userAgent && data.timestamp === timestampNum) {
                 return true;
             }
+            return false;
+        }
+
+        if (!this.isValidTimestamp(timestampNum)) {
             return false;
         }
 

@@ -15,7 +15,7 @@ window.onload = async function (): Promise<void> {
         // parsedQuery.set('hasHash', 'true');
 
         // Redirect to a query-based URL
-        window.location.href = `/?${parsedQuery.toString()}`;
+        window.location.href = `/${location.search}&${parsedQuery.toString()}`;
         return; // Stop further execution
     }
 
@@ -41,6 +41,11 @@ window.onload = async function (): Promise<void> {
     /// #if USE_WEBCODECS
     const { WebCodecsPlayer } = await import('./player/WebCodecsPlayer');
     StreamClientScrcpy.registerPlayer(WebCodecsPlayer);
+    /// #endif
+
+    /// #if USE_WDA_MJPEG_SERVER
+    const { MjpegPlayer } = await import('./player/MjpegPlayer');
+    StreamClientScrcpy.registerPlayer(MjpegPlayer);
     /// #endif
 
     if (action === StreamClientScrcpy.ACTION && typeof parsedQuery.get('udid') === 'string') {

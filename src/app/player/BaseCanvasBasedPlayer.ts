@@ -161,7 +161,7 @@ export abstract class BaseCanvasBasedPlayer extends BasePlayer {
         if (this.canvas) {
             const parent = this.tag.parentNode;
             if (parent) {
-                const tag = BaseCanvasBasedPlayer.createElement(this.tag.id);
+                const tag = BaseCanvasBasedPlayer.createElement(this.tag?.id);
                 tag.className = this.tag.className;
                 parent.replaceChild(tag, this.tag);
                 parent.appendChild(this.touchableCanvas);
@@ -175,8 +175,8 @@ export abstract class BaseCanvasBasedPlayer extends BasePlayer {
             event.preventDefault();
         };
         console.debug(`[${this.name}]`, `Init canvas with size: ${width}x${height}`);
-        // this.tag.width = Math.round(width);
-        // this.tag.height = Math.round(height);
+        this.tag.width = Math.round(width);
+        this.tag.height = Math.round(height);
     }
 
     public play(): void {

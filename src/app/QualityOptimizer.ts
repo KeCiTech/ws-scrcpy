@@ -3,16 +3,15 @@ import { BasePlayer } from './player/BasePlayer';
 import { StreamClientScrcpy } from './googDevice/client/StreamClientScrcpy';
 
 export class QualityOptimizer {
-    private readonly MAX_BITRATE = 22 * 1024 * 1024; // 22 Mbps
+    public readonly MAX_BITRATE = 10 * 1024 * 1024; // 10 Mbps
     private readonly MIN_BITRATE = 500 * 1024; // 500 Kbps
     private readonly MAX_FPS = 60;
     private readonly MIN_FPS = 15;
-    private readonly INTERVAL = 2000; // Check every 2 seconds
+    private readonly INTERVAL = 5000; // Check every 5 seconds
     private timerId?: number;
     private wsLatency = 0;
     private wsQualityScore = 1;
     private latencyHistory: number[] = [];
-    // private lastOrientation?: number;
     private pendingOrientationChange = false;
     private lastStats: {
         decodedFrames: number;
@@ -31,13 +30,19 @@ export class QualityOptimizer {
         // this.lastOrientation = player.getScreenInfo()?.deviceRotation;
         // player.on('video-settings', () => this.checkOrientation());
     }
-
     public start(): void {
         console.log('[QualityOptimizer] Starting quality optimizer...');
         if (this.timerId) {
             return;
         }
-        this.timerId = window.setInterval(() => this.optimize(), this.INTERVAL);
+        // Run first optimization
+        this.optimize();
+
+        // Only set interval if not accessed via IP address
+        const serverUrl = this.getServerUrl();
+        if (!serverUrl || !this.isIpAddress(serverUrl)) {
+            this.timerId = window.setInterval(() => this.optimize(), this.INTERVAL);
+        }
     }
 
     public stop(): void {
@@ -113,7 +118,7 @@ export class QualityOptimizer {
                 return 1;
         }
     }
-    private isIpv4Address(url: string): boolean {
+    public isIpAddress(url: string): boolean {
         try {
             const { hostname, protocol } = new URL(url);
             // Ensure HTTP or HTTPS protocol
@@ -124,31 +129,19 @@ export class QualityOptimizer {
             if (hostname === 'localhost') {
                 return true;
             }
-            // Strict IPv4 format check
+
+            // IPv4 check
             const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-            if (!ipv4Regex.test(hostname)) {
-                return false;
+            if (ipv4Regex.test(hostname)) {
+                const parts = hostname.split('.');
+                return parts.every((part) => {
+                    const num = parseInt(part, 10);
+                    return num >= 0 && num <= 255;
+                });
             }
-            // Validate each number is in the range 0-255
-            const parts = hostname.split('.');
-            return parts.every((part) => {
-                const num = parseInt(part, 10);
-                return num >= 0 && num <= 255;
-            });
-        } catch {
-            return false;
-        }
-    }
-    private isIpv6Address(url: string): boolean {
-        try {
-            const { hostname, protocol } = new URL(url);
-            // Ensure HTTP or HTTPS protocol
-            if (!protocol.startsWith('http')) {
-                return false;
-            }
-            // Remove possible brackets
+
+            // IPv6 check
             const address = hostname.replace(/^\[/, '').replace(/\]$/, '');
-            // More complete IPv6 regex, supporting more valid IPv6 formats
             const ipv6Regex = /^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$/i;
             return ipv6Regex.test(address);
         } catch {
@@ -160,13 +153,12 @@ export class QualityOptimizer {
         // Get current page URL
         return window.location.href;
     }
-
     private async optimize(): Promise<void> {
         // Get current server address and check if accessed via IP address
         const serverUrl = this.getServerUrl();
-        const isIpAddress = serverUrl && (this.isIpv4Address(serverUrl) || this.isIpv6Address(serverUrl));
+        const isIpAddress = serverUrl && this.isIpAddress(serverUrl);
 
-        // If accessed via IP address, force maximum quality settings
+        // If accessed via IP address
         if (isIpAddress) {
             const currentSettings = this.player.getVideoSettings();
             // Check if settings need to be updated (first time or parameters do not match highest quality)

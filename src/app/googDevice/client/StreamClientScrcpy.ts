@@ -391,8 +391,8 @@ export class StreamClientScrcpy
         const body = document.body;
         // const width = (body.clientWidth - this.controlButtons.clientWidth) & ~15;
         // const height = body.clientHeight & ~15;
-        const width = body.clientWidth & ~15;
-        const height = body.clientHeight & ~15;
+        const width = body.clientWidth * (window.devicePixelRatio || 1) & ~15;
+        const height = body.clientHeight * (window.devicePixelRatio || 1) & ~15;
         return new Size(width, height);
     }
 

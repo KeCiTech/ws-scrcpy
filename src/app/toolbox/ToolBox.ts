@@ -9,6 +9,7 @@ export class ToolBox {
     private initialY = 0;
     private xOffset = 0;
     private yOffset = 0;
+    private hasTriggeredFullscreen = false;
 
     constructor(list: ToolBoxElement<any>[]) {
         this.holder = document.createElement('div');
@@ -23,8 +24,28 @@ export class ToolBox {
             });
         });
 
+        // Append the holder to the body or a specific container
+        if (this.isNarrowScreen()) {
+            const handleFirstClick = () => {
+                if (!this.hasTriggeredFullscreen) {
+                    this.hasTriggeredFullscreen = true;
+                    this.requestFullscreen();
+                    // Remove the event listener after the first click
+                    document.removeEventListener('click', handleFirstClick);
+                }
+            };
+            document.addEventListener('click', handleFirstClick);
+        }
+
         this.initDragHandlers();
         this.initMoreBoxHandlers();
+    }
+
+    private requestFullscreen(): void {
+        const element = document.documentElement;
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        }
     }
 
     private isNarrowScreen(): boolean {
@@ -35,6 +56,7 @@ export class ToolBox {
     }
 
     private initDragHandlers(): void {
+        // Mouse Events
         this.holder.addEventListener('mousedown', (e: MouseEvent) => {
             this.isDragging = true;
             this.initialX = e.clientX - this.xOffset;
@@ -48,18 +70,7 @@ export class ToolBox {
                 this.currentY = e.clientY - this.initialY;
                 this.xOffset = this.currentX;
                 this.yOffset = this.currentY;
-                if (this.isNarrowScreen()) {
-                    // In narrow screen mode, maintain 50% offset while allowing horizontal dragging
-                    this.holder.style.transform = `translate(calc(-50% + ${this.currentX}px), ${this.currentY}px)`;
-                } else {
-                    this.holder.style.transform = `translate(${this.currentX}px, ${this.currentY}px)`;
-                }
-
-                // Update more-box position when dragging
-                const moreBox = document.querySelector('.more-box') as HTMLElement;
-                if (moreBox && moreBox.classList.contains('show')) {
-                    this.setMoreBoxPosition(moreBox);
-                }
+                this.updatePosition();
             }
         });
 
@@ -67,10 +78,52 @@ export class ToolBox {
             this.isDragging = false;
         });
 
-        // Add mouseleave event handler to prevent losing track during fast dragging
         document.addEventListener('mouseleave', () => {
             this.isDragging = false;
         });
+
+        // Touch Events
+        this.holder.addEventListener('touchstart', (e: TouchEvent) => {
+            if (e.touches.length === 1) {
+                this.isDragging = true;
+                this.initialX = e.touches[0].clientX - this.xOffset;
+                this.initialY = e.touches[0].clientY - this.yOffset;
+            }
+        });
+
+        document.addEventListener('touchmove', (e: TouchEvent) => {
+            if (this.isDragging && e.touches.length === 1) {
+                e.preventDefault();
+                this.currentX = e.touches[0].clientX - this.initialX;
+                this.currentY = e.touches[0].clientY - this.initialY;
+                this.xOffset = this.currentX;
+                this.yOffset = this.currentY;
+                this.updatePosition();
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', () => {
+            this.isDragging = false;
+        });
+
+        document.addEventListener('touchcancel', () => {
+            this.isDragging = false;
+        });
+    }
+
+    private updatePosition(): void {
+        if (this.isNarrowScreen()) {
+            // In narrow screen mode, maintain 50% offset while allowing horizontal dragging
+            this.holder.style.transform = `translate(calc(-50% + ${this.currentX}px), ${this.currentY}px)`;
+        } else {
+            this.holder.style.transform = `translate(${this.currentX}px, ${this.currentY}px)`;
+        }
+
+        // Update more-box position when dragging
+        const moreBox = document.querySelector('.more-box') as HTMLElement;
+        if (moreBox && moreBox.classList.contains('show')) {
+            this.setMoreBoxPosition(moreBox);
+        }
     }
 
     private toggleMoreBox(): void {

@@ -154,7 +154,7 @@ body.stream {
     padding: 8px;
     top: 10px;
     left: 10px;
-    width: 1.6rem;
+    width: 2.1rem;
 }
 
 @media (max-aspect-ratio: 0.6) {
@@ -176,7 +176,7 @@ body.stream {
     }
     
     .control-button {
-        display: block !important;
+        /* display: block !important; */
         margin: 0;
     }
     
@@ -203,8 +203,8 @@ body.stream {
 
 .control-button {
     padding: 0;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 2rem;
+    height: 2rem;
     border: none;
     opacity: 0.75;
     background-color: transparent;

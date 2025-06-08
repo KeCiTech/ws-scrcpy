@@ -65,7 +65,7 @@ export abstract class BaseDeviceTracker<DD extends BaseDeviceDescriptor, TE exte
         }
         const hash = `#!${new URLSearchParams(q).toString()}`;
         const a = document.createElement('a');
-        a.setAttribute('href', `${protocol}//${hostname}:${port}${pathname}${hash}`);
+        a.setAttribute('href', `${protocol}//${hostname}:${port}${pathname}${location.search}${hash}`);
         a.setAttribute('rel', 'noopener noreferrer');
         a.setAttribute('target', '_blank');
         a.classList.add(`link-${q.action}`);

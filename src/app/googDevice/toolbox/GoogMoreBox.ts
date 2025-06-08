@@ -37,7 +37,7 @@ export class GoogMoreBox {
         const { displayId } = videoSettings;
         const preferredSettings = player.getPreferredVideoSetting();
         // Start clipboard synchronization
-        this.startClipboardSync();        // Construct UI first
+        this.startClipboardSync(); // Construct UI first
         const moreBox = document.createElement('div');
         moreBox.className = 'more-box';
         const nameBox = document.createElement('p');
@@ -236,9 +236,18 @@ export class GoogMoreBox {
         GoogMoreBox.wrap('p', [autoBitrateCheck, autoBitrateLabel], moreBox, ['flex-center']);
         try {
             const savedAutoBitrate = localStorage.getItem(`autoBitrate_${udid}`);
-            this.isAutoBitrateEnabled = savedAutoBitrate === 'true' || savedAutoBitrate === null;
+            if (this.qualityOptimizer.isIpAddress(window.location.href)) {
+                this.isAutoBitrateEnabled = false;
+                // 1 second delay to ensure the player is ready
+                setTimeout(() => {
+                    this.qualityOptimizer.start();
+                }, 1000);
+            } else {
+                this.isAutoBitrateEnabled = savedAutoBitrate === 'true' || savedAutoBitrate === null;
+            }
+
             autoBitrateCheck.checked = this.isAutoBitrateEnabled;
-            
+
             if (this.isAutoBitrateEnabled) {
                 this.startAutoQualityAdjustment();
             }
@@ -252,7 +261,7 @@ export class GoogMoreBox {
         autoBitrateCheck.onchange = () => {
             this.isAutoBitrateEnabled = autoBitrateCheck.checked;
             this.startAutoQualityAdjustment();
-            
+
             try {
                 localStorage.setItem(`autoBitrate_${udid}`, this.isAutoBitrateEnabled.toString());
             } catch (e) {

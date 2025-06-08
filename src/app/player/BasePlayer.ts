@@ -245,18 +245,6 @@ export abstract class BasePlayer extends TypedEmitter<PlayerEvents> {
         // Trigger video settings update event to notify QualityOptimizer about orientation change
         // this.emit('video-settings', newSettings);
     }
-    public toggleFullscreen(): void {
-        const element = this.tag.parentElement;
-        if (!element) return;
-
-        if (!document.fullscreenElement) {
-            element.requestFullscreen().catch((err) => {
-                console.error(`Error attempting to enable fullscreen: ${err.message}`);
-            });
-        } else {
-            document.exitFullscreen();
-        }
-    }
 
     protected calculateScreenInfoForBounds(videoWidth: number, videoHeight: number): void {
         this.videoWidth = videoWidth;

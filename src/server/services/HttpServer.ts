@@ -131,8 +131,8 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
 
         // Verify signature
         if (receivedSignature === calculatedSignature) {
-            this.usedSignatures.set(receivedSignature, { 
-                timestamp: timestampNum, 
+            this.usedSignatures.set(receivedSignature, {
+                timestamp: timestampNum,
                 ip: clientIp,
                 userAgent: userAgent
             });
@@ -149,23 +149,24 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
 
         // Create middleware based on environment variables presence
         const authMiddleware = basicAuth({
-            users: { 
-                [adminUser]: adminPassword 
+            users: {
+                [adminUser]: adminPassword
             },
             challenge: true,
             realm: 'Restricted Access',
-        }); 
+        });
         // Protect the base path
         this.mainApp.use((req: Request, res: Response, next: NextFunction) => {
-            if (req.path === '/' && req.query.signature && req.query.timestamp) {
+            if (req.path === PATHNAME + '/' && req.query.signature && req.query.timestamp) {
                 // Using signature verification
                 if (this.verifySignature(req)) {
                     next();
                 } else {
                     res.status(403).send('Invalid signature or expired timestamp');
+                    // next();
                 }
-            } else if (req.path === '/') {
-                if(!adminUser || !adminPassword){
+            } else if (req.path === PATHNAME + '/') {
+                if (!adminUser || !adminPassword) {
                     res.status(404).end();
                 }
                 // Using basic authentication

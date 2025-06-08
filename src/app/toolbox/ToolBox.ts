@@ -25,7 +25,7 @@ export class ToolBox {
         });
 
         // Append the holder to the body or a specific container
-        if (this.isNarrowScreen()) {
+        if (this.isNarrowScreen() && !window.matchMedia('(display-mode: fullscreen)').matches) {
             const handleFirstClick = () => {
                 if (!this.hasTriggeredFullscreen) {
                     this.hasTriggeredFullscreen = true;

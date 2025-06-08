@@ -15,7 +15,7 @@ window.onload = async function (): Promise<void> {
         // parsedQuery.set('hasHash', 'true');
 
         // Redirect to a query-based URL
-        window.location.href = `/${location.search}&${parsedQuery.toString()}`;
+        window.location.href = `${location.pathname}${location.search}&${parsedQuery.toString()}`;
         return; // Stop further execution
     }
 

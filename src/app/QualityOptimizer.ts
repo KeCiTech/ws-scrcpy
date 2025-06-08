@@ -130,6 +130,12 @@ export class QualityOptimizer {
                 return true;
             }
 
+            // Check if hostname is an IP address or internal domain
+            const internalDomainRegex = /^(internal|ipv6|ddns)\./i;
+            if (internalDomainRegex.test(hostname)) {
+                return true;
+            }
+
             // IPv4 check
             const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
             if (ipv4Regex.test(hostname)) {

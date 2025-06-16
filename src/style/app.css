@@ -159,6 +159,9 @@ body.stream {
 }
 
 @media (max-aspect-ratio: 0.6) {
+    .device-view{
+        margin-top: 10px;
+    }
     .control-buttons-list {
         position: fixed;
         width: 100%;

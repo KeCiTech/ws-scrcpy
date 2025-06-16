@@ -167,19 +167,14 @@ export class QualityOptimizer {
         // If accessed via IP address
         if (isIpAddress) {
             const currentSettings = this.player.getVideoSettings();
-            // Check if settings need to be updated (first time or parameters do not match highest quality)
             if (
-                this.lastStats.timestamp === 0 ||
-                currentSettings.bitrate !== this.MAX_BITRATE ||
-                currentSettings.maxFps !== 60 ||
-                currentSettings.iFrameInterval !== 60
+                this.lastStats.timestamp === 0
             ) {
-                console.log('[QualityOptimizer] IP address detected, setting maximum quality');
                 const newSettings = new VideoSettings({
                     ...currentSettings,
-                    bitrate: this.MAX_BITRATE,
-                    maxFps: 60,
-                    iFrameInterval: 60,
+                    bitrate: Math.floor(this.MAX_BITRATE * 0.5),
+                    maxFps: 24,
+                    iFrameInterval: 5,
                 });
 
                 // Simultaneously update video settings for client and player
@@ -189,14 +184,7 @@ export class QualityOptimizer {
                 // Force set highest quality score
                 this.wsQualityScore = 1.0;
                 this.lastStats.timestamp = Date.now(); // Update timestamp
-                this.lastStats.bitrate = this.MAX_BITRATE;
-
-                console.log('[QualityOptimizer] Maximum quality settings applied:', {
-                    bitrate: Math.round(this.MAX_BITRATE / 1024) + 'kbps',
-                    maxFps: 60,
-                    iFrameInterval: 60,
-                });
-
+                this.lastStats.bitrate = Math.floor(this.MAX_BITRATE * 0.5);
                 // When accessed via IP address, skip subsequent optimization logic if maximum quality settings have been applied
                 return;
             }

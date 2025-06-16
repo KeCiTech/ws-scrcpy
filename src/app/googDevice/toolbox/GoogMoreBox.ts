@@ -136,6 +136,23 @@ export class GoogMoreBox {
                 resetButton.innerText = 'Reset';
                 resetButton.onclick = this.reset;
                 innerDiv.insertBefore(resetButton, innerDiv.firstChild);
+
+                // Add preset quality buttons
+                const smoothButton = document.createElement('button');
+                smoothButton.innerText = 'Smooth';
+                smoothButton.onclick = this.applySmooth;
+                innerDiv.insertBefore(smoothButton, innerDiv.firstChild);
+
+                const balancedButton = document.createElement('button');
+                balancedButton.innerText = 'Balanced';
+                balancedButton.onclick = this.applyBalanced;
+                innerDiv.insertBefore(balancedButton, innerDiv.firstChild);
+
+                const hdButton = document.createElement('button');
+                hdButton.innerText = 'HD';
+                hdButton.onclick = this.applyHD;
+                innerDiv.insertBefore(hdButton, innerDiv.firstChild);
+
                 commands.push(spoiler);
             } else {
                 if (
@@ -336,6 +353,36 @@ export class GoogMoreBox {
         const preferredSettings = this.player.getPreferredVideoSetting();
         this.onVideoSettings(preferredSettings);
     };
+
+    private applyPreset(bitrateScale: number, maxFps: number, iFrameInterval: number, resolutionScale: number): void {
+        if (!this.maxWidthInput || !this.maxHeightInput || !this.bitrateInput || !this.maxFpsInput || !this.iFrameIntervalInput) {
+            return;
+        }
+        const { width: maxWidth, height: maxHeight } = this.client.getMaxSize() || GoogMoreBox.defaultSize;
+        const newWidth = Math.floor(maxWidth * resolutionScale) & ~15;
+        const newHeight = Math.floor(maxHeight * resolutionScale) & ~15;
+        
+        const newBitrate = Math.floor(this.qualityOptimizer.MAX_BITRATE * bitrateScale);
+
+        this.maxWidthInput.value = newWidth.toString();
+        this.maxHeightInput.value = newHeight.toString();
+        this.bitrateInput.value = newBitrate.toString();
+        this.maxFpsInput.value = maxFps.toString();
+        this.iFrameIntervalInput.value = iFrameInterval.toString();
+    }
+
+    private applySmooth = (): void => {
+        this.applyPreset(0.05, 24, 5, 0.25);
+    };
+
+    private applyBalanced = (): void => {
+        this.applyPreset(0.5, 24, 5, 0.5);
+    };
+
+    private applyHD = (): void => {
+        this.applyPreset(1, 60, 30, 1);
+    };
+
     public OnDeviceMessage(ev: DeviceMessage): void {
         if (ev.type !== DeviceMessage.TYPE_CLIPBOARD) {
             return;

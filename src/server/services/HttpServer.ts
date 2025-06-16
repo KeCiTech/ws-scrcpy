@@ -157,6 +157,11 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
         });
         // Protect the base path
         this.mainApp.use((req: Request, res: Response, next: NextFunction) => {
+            if (
+                req.hostname === 'localhost'
+            ) {
+                return next();
+            }
             if (req.path === PATHNAME + '/' && req.query.signature && req.query.timestamp) {
                 // Using signature verification
                 if (this.verifySignature(req)) {

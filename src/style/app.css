@@ -54,6 +54,7 @@
 html {
     font-size: var(--font-size);
 }
+
 a {
     color: var(--link-color);
 }
@@ -160,7 +161,7 @@ body.stream {
 @media (max-aspect-ratio: 0.6) {
     .control-buttons-list {
         position: fixed;
-        width: auto;
+        width: 100%;
         top: auto;
         bottom: 0;
         left: 50%;
@@ -169,17 +170,22 @@ body.stream {
         display: flex;
         flex-direction: row;
         align-items: center;
-        justify-content: center;
-        padding: 8px 16px;
-        gap: 8px;
+        justify-content: space-evenly;
+        padding: 8px 0;
         z-index: 1001;
     }
-    
+
     .control-button {
         /* display: block !important; */
         margin: 0;
+        flex: 1;
     }
-    
+
+    .control-button>svg {
+        width: 2rem;
+        height: 2rem;
+    }
+
     .more-box {
         position: fixed !important;
         left: 50% !important;
@@ -189,13 +195,13 @@ body.stream {
         max-height: calc(100vh - 120px);
         overflow-y: auto;
     }
-    
-    .control-buttons-list:not(.top) ~ .more-box.show {
+
+    .control-buttons-list:not(.top)~.more-box.show {
         bottom: 70px !important;
         top: auto !important;
     }
-    
-    .control-buttons-list.top ~ .more-box.show {
+
+    .control-buttons-list.top~.more-box.show {
         top: 70px !important;
         bottom: auto !important;
     }
@@ -208,16 +214,16 @@ body.stream {
     border: none;
     opacity: 0.75;
     background-color: transparent;
-    display: none; 
+    display: none;
     transition: opacity 0.3s ease, fill 0.3s ease;
     cursor: pointer;
 }
 
 :fullscreen .control-button[title="Fullscreen"] {
-    display: block; 
+    display: block;
 }
 
-:fullscreen .control-button[title="Fullscreen"] > svg {
+:fullscreen .control-button[title="Fullscreen"]>svg {
     fill: var(--svg-checkbox-bg-color) !important;
 }
 
@@ -229,7 +235,7 @@ body.stream {
     background-color: rgba(0, 0, 0, 0.5);
 }
 
-:fullscreen .control-button > svg {
+:fullscreen .control-button>svg {
     fill: #ffffff;
 }
 
@@ -250,36 +256,38 @@ body.stream {
     display: block;
 }
 
-.control-buttons-list.show-all > label
+.control-buttons-list.show-all>label
+
 /* ,.control-wrapper > label */
-{
+    {
+    text-align: center;
     display: inline-block;
 }
 
-.control-wrapper > input[type=checkbox] {
+.control-wrapper>input[type=checkbox] {
     display: none;
 }
 
-.control-button > svg {
+.control-button>svg {
     fill: var(--svg-button-fill);
 }
 
-.control-wrapper > input[type=checkbox].two-images:checked + label > svg.image-on {
+.control-wrapper>input[type=checkbox].two-images:checked+label>svg.image-on {
     display: block;
 }
 
-.control-wrapper > input[type=checkbox].two-images:not(:checked) + label > svg.image-on {
+.control-wrapper>input[type=checkbox].two-images:not(:checked)+label>svg.image-on {
     display: none;
 }
 
-.control-wrapper > input[type=checkbox].two-images:checked + label > svg.image-off {
+.control-wrapper>input[type=checkbox].two-images:checked+label>svg.image-off {
     display: none;
 }
 
-.control-wrapper > input[type=checkbox].two-images:not(:checked) + label > svg.image-off {
+.control-wrapper>input[type=checkbox].two-images:not(:checked)+label>svg.image-off {
     display: block;
 }
 
-.control-wrapper > input[type=checkbox]:checked + label > svg {
+.control-wrapper>input[type=checkbox]:checked+label>svg {
     fill: var(--svg-checkbox-bg-color);
 }
